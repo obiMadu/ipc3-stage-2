@@ -7,8 +7,8 @@ type jsonRequest struct {
 }
 
 type jsonResponse struct {
-	Status  string         `json:"status" binding:"required"`
-	Message string         `json:"message" binding:"required"`
-	Data    map[string]any `json:"data" binding:"required"`
+	Status  string         `json:"status"`
+	Message string         `json:"message"`
+	Data    map[string]any `json:"data"`
 	Error   map[string]any `json:"error,omitempty"`
 }
