@@ -19,7 +19,7 @@ var DB *gorm.DB
 
 func InitDB() {
 	// new db
-	db := connectToMysql()
+	db := connectToPostgres()
 
 	if gin.Mode() == gin.ReleaseMode {
 		db.Logger.LogMode(0)
