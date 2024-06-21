@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/obimadu/ipc3-stage-2/internals/db"
 	"github.com/obimadu/ipc3-stage-2/internals/handlers"
 )
 
@@ -15,14 +16,18 @@ func router() *gin.Engine {
 
 	// ROUTES
 	// API group (v1)
-	api := mux.Group("/api/v1")
+	api := mux.Group("/api")
 
 	// API/USERS group
 	users := api.Group("/users")
 	users.POST("/", handlers.CreateUser)
 
-	users.GET("/", handlers.GetUser)
-	users.GET("/:userID", handlers.GetUser)
+	users.GET("/", func(c *gin.Context) {
+		handlers.GetAll(c, db.DB)
+	})
+	users.GET("/:userID", func(c *gin.Context) {
+		handlers.GetUserByID(c, db.DB)
+	})
 
 	users.PUT("/", handlers.UpdateUser)
 	users.PUT("/:userID", handlers.UpdateUser)
