@@ -2,6 +2,13 @@ package models
 
 import "gorm.io/gorm"
 
+type Users struct {
+	ID       uint   `json:"id" gorm:"primaryKey;autoIncrement"`
+	Username string `json:"username" gorm:"unique;not null"`
+	Email    string `json:"email" gorm:"unique;not null"`
+	Fullname string `json:"fullname,omitempty"`
+}
+
 func CreateUser(db *gorm.DB, user Users) error {
 	return db.Create(&user).Error
 }
