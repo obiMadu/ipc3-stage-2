@@ -26,7 +26,7 @@ jobs:
       run: |
         go build -o api-app ./cmd/api
         mkdir -p release
-        mv myapp release/
+        mv api-app release/
 
     - name: Create Release
       id: create_release
