@@ -2,7 +2,7 @@ package main
 
 import "github.com/obimadu/ipc3-stage-2/internals/config"
 
-const webPort string = ":8080"
+const webPort string = ":80"
 
 func main() {
 	// Init
