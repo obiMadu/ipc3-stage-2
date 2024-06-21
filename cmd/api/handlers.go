@@ -11,10 +11,9 @@ import (
 )
 
 func getUser(c *gin.Context) {
-	var idStr string
-	username, exists := c.Get("username")
+	username := c.Query("username")
 
-	if !exists && c.Param("userID") == "" {
+	if username == "" && c.Param("userID") == "" {
 		users, err := models.GetAll(db.DB)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, jsonResponse{
@@ -32,8 +31,8 @@ func getUser(c *gin.Context) {
 			},
 		})
 		return
-	} else if !exists && c.Param("userID") != "" {
-		id, err := strconv.ParseUint(idStr, 10, 32)
+	} else if username == "" && c.Param("userID") != "" {
+		id, err := strconv.ParseUint(c.Param("userID"), 10, 32)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, jsonResponse{
 				Status:  "error",
@@ -44,10 +43,7 @@ func getUser(c *gin.Context) {
 
 		user, err := models.GetUserByID(db.DB, uint(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, jsonResponse{
-				Status:  "error",
-				Message: "Failed to retrieve user.",
-			})
+			checkRecordExists(c, err)
 			return
 		}
 
@@ -61,12 +57,23 @@ func getUser(c *gin.Context) {
 		return
 	}
 
-	user, err := models.GetUserByUsername(db.DB, username.(string))
+	user, err := models.GetUserByUsername(db.DB, username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, jsonResponse{
-			Status:  "error",
-			Message: "Failed to retrieve user.",
-		})
+		if strings.Contains(err.Error(), "record not found") {
+			c.JSON(http.StatusBadRequest, jsonResponse{
+				Status:  "error",
+				Message: "User does not exist",
+			})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, jsonResponse{
+				Status:  "error",
+				Message: "Failed to retrieve user.",
+				Error: gin.H{
+					"error": err.Error(),
+				},
+			})
+		}
 		return
 	}
 
@@ -104,28 +111,8 @@ func createUser(c *gin.Context) {
 
 	err = models.CreateUser(db.DB, user)
 	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") && strings.Contains(err.Error(), "email") {
-			c.JSON(http.StatusBadRequest, jsonResponse{
-				Status:  "error",
-				Message: "Email has been taken!",
-			})
-			return
-		} else if strings.Contains(err.Error(), "duplicate key value violates unique constraint") && strings.Contains(err.Error(), "username") {
-			c.JSON(http.StatusBadRequest, jsonResponse{
-				Status:  "error",
-				Message: "Username has been taken!",
-			})
-			return
-		} else {
-			c.JSON(http.StatusInternalServerError, jsonResponse{
-				Status:  "error",
-				Message: "Failed to create user.",
-				Error: gin.H{
-					"error": err.Error(),
-				},
-			})
-			return
-		}
+		checkUnique(c, err)
+		return
 	}
 
 	c.JSON(http.StatusOK, jsonResponse{
@@ -146,8 +133,9 @@ func updateUser(c *gin.Context) {
 		return
 	}
 
-	username, exists := c.Get("username")
-	if !exists && c.Param("userID") != "" {
+	username := c.Query("username")
+	userID := c.Param("userID")
+	if username == "" && userID != "" {
 		idStr := c.Param("userID")
 		id, err := strconv.ParseUint(idStr, 10, 32)
 		if err != nil {
@@ -160,10 +148,7 @@ func updateUser(c *gin.Context) {
 
 		err = models.UpdateUserByID(db.DB, uint(id), user)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, jsonResponse{
-				Status:  "error",
-				Message: "Failed to update user.",
-			})
+			checkUnique(c, err)
 			return
 		}
 
@@ -172,15 +157,10 @@ func updateUser(c *gin.Context) {
 			Message: "User updated succesfully.",
 		})
 		return
-	}
-
-	if exists && c.Param("userID") == "" {
-		err = models.UpdateUserByUsername(db.DB, username.(string), user)
+	} else if userID == "" && username != "" {
+		err = models.UpdateUserByUsername(db.DB, username, user)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, jsonResponse{
-				Status:  "error",
-				Message: "Failed to update user.",
-			})
+			checkUnique(c, err)
 			return
 		}
 
@@ -199,8 +179,8 @@ func updateUser(c *gin.Context) {
 }
 
 func deleteUser(c *gin.Context) {
-	username, exists := c.Get("username")
-	if !exists && c.Param("userID") != "" {
+	username := c.Query("username")
+	if username == "" && c.Param("userID") != "" {
 		idStr := c.Param("userID")
 		id, err := strconv.ParseUint(idStr, 10, 32)
 		if err != nil {
@@ -213,10 +193,7 @@ func deleteUser(c *gin.Context) {
 
 		err = models.DeleteUserByID(db.DB, uint(id))
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, jsonResponse{
-				Status:  "error",
-				Message: "Failed to delete user.",
-			})
+			checkRecordExists(c, err)
 			return
 		}
 
@@ -227,13 +204,10 @@ func deleteUser(c *gin.Context) {
 		return
 	}
 
-	if exists && c.Param("userID") == "" {
-		err := models.DeleteUserByUsername(db.DB, username.(string))
+	if username != "" && c.Param("userID") == "" {
+		err := models.DeleteUserByUsername(db.DB, username)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, jsonResponse{
-				Status:  "error",
-				Message: "Failed to delete user.",
-			})
+			checkRecordExists(c, err)
 			return
 		}
 
@@ -248,4 +222,48 @@ func deleteUser(c *gin.Context) {
 		Status:  "error",
 		Message: "You must/can only specify a user to delete.",
 	})
+}
+
+func checkUnique(c *gin.Context, err error) {
+	if strings.Contains(err.Error(), "duplicate key value violates unique constraint") && strings.Contains(err.Error(), "email") {
+		c.JSON(http.StatusBadRequest, jsonResponse{
+			Status:  "error",
+			Message: "Email has been taken!",
+		})
+		return
+	} else if strings.Contains(err.Error(), "duplicate key value violates unique constraint") && strings.Contains(err.Error(), "username") {
+		c.JSON(http.StatusBadRequest, jsonResponse{
+			Status:  "error",
+			Message: "Username has been taken!",
+		})
+		return
+	} else {
+		c.JSON(http.StatusInternalServerError, jsonResponse{
+			Status:  "error",
+			Message: "User operation failed",
+			Error: gin.H{
+				"error": err.Error(),
+			},
+		})
+		return
+	}
+}
+
+func checkRecordExists(c *gin.Context, err error) {
+	if strings.Contains(err.Error(), "record not found") {
+		c.JSON(http.StatusBadRequest, jsonResponse{
+			Status:  "error",
+			Message: "User does not exist",
+		})
+		return
+	} else {
+		c.JSON(http.StatusInternalServerError, jsonResponse{
+			Status:  "error",
+			Message: "Failed to retrieve user.",
+			Error: gin.H{
+				"error": err.Error(),
+			},
+		})
+		return
+	}
 }
