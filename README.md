@@ -104,4 +104,4 @@ The API should now be accessible at `http://localhost:8080`
 
 ## 6. Some Additional Notes
 
-- This repository contains Github Actions worflows for Continuous Integration.
+- This repository contains Github Actions workflows for Continuous Integration.
