@@ -3,14 +3,8 @@ package main
 import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/obimadu/ipc3-stage-2/internals/handlers"
 )
-
-type jsonResponse struct {
-	Status  string         `json:"status"`
-	Message string         `json:"message"`
-	Data    map[string]any `json:"data"`
-	Error   map[string]any `json:"error,omitempty"`
-}
 
 func router() *gin.Engine {
 	// make router
@@ -25,16 +19,16 @@ func router() *gin.Engine {
 
 	// API/USERS group
 	users := api.Group("/users")
-	users.POST("/", createUser)
+	users.POST("/", handlers.CreateUser)
 
-	users.GET("/", getUser)
-	users.GET("/:userID", getUser)
+	users.GET("/", handlers.GetUser)
+	users.GET("/:userID", handlers.GetUser)
 
-	users.PUT("/", updateUser)
-	users.PUT("/:userID", updateUser)
+	users.PUT("/", handlers.UpdateUser)
+	users.PUT("/:userID", handlers.UpdateUser)
 
-	users.DELETE("/", deleteUser)
-	users.DELETE("/:userID", deleteUser)
+	users.DELETE("/", handlers.DeleteUser)
+	users.DELETE("/:userID", handlers.DeleteUser)
 
 	return mux
 }

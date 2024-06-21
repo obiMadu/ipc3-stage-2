@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"net/http"
@@ -10,7 +10,14 @@ import (
 	"github.com/obimadu/ipc3-stage-2/internals/models"
 )
 
-func getUser(c *gin.Context) {
+type jsonResponse struct {
+	Status  string         `json:"status"`
+	Message string         `json:"message"`
+	Data    map[string]any `json:"data"`
+	Error   map[string]any `json:"error,omitempty"`
+}
+
+func GetUser(c *gin.Context) {
 	username := c.Query("username")
 
 	if username == "" && c.Param("userID") == "" {
@@ -86,7 +93,7 @@ func getUser(c *gin.Context) {
 	})
 }
 
-func createUser(c *gin.Context) {
+func CreateUser(c *gin.Context) {
 	var user models.Users
 
 	err := c.ShouldBindBodyWithJSON(&user)
@@ -121,7 +128,7 @@ func createUser(c *gin.Context) {
 	})
 }
 
-func updateUser(c *gin.Context) {
+func UpdateUser(c *gin.Context) {
 
 	var user models.Users
 	err := c.ShouldBindBodyWithJSON(&user)
@@ -178,7 +185,7 @@ func updateUser(c *gin.Context) {
 
 }
 
-func deleteUser(c *gin.Context) {
+func DeleteUser(c *gin.Context) {
 	username := c.Query("username")
 	if username == "" && c.Param("userID") != "" {
 		idStr := c.Param("userID")
