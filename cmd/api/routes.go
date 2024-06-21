@@ -12,18 +12,22 @@ func router() *gin.Engine {
 	// use cors
 	mux.Use(cors.Default())
 
-	// routes
-	// routes.users
-	mux.POST("/users", createUser)
+	// ROUTES
+	// API group (v1)
+	api := mux.Group("/api/v1")
 
-	mux.GET("/users", getUser)
-	mux.GET("/users/:userID", getUser)
+	// API/USERS group
+	users := api.Group("/users")
+	users.POST("/", createUser)
 
-	mux.PUT("/users", updateUser)
-	mux.PUT("users/:userID", updateUser)
+	users.GET("/", getUser)
+	users.GET("/:userID", getUser)
 
-	mux.DELETE("users", deleteUser)
-	mux.DELETE("users/:userID", deleteUser)
+	users.PUT("/", updateUser)
+	users.PUT("/:userID", updateUser)
+
+	users.DELETE("/", deleteUser)
+	users.DELETE("/:userID", deleteUser)
 
 	return mux
 }
