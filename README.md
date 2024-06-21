@@ -35,7 +35,7 @@ The API can be accessed via HTTP requests. It exposes endpoints for various CRUD
 
 Sample API base URL: `http://example.com/api`
 
-**Current [Active]** base URL: `https://ip.obi.ninja/api`
+**Current [Active]** base URL: `https://ips2.obi.ninja/api`
 
 ### 2.2 Supported CRUD Operations
 
