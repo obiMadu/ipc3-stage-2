@@ -80,7 +80,6 @@ The API supports the following CRUD operations:
 ## 4. Sample API Calls
 
 Visit the Postman Documentation [here](https://documenter.getpostman.com/view/29936566/2sA3XV9KXa) to view sample `success` and `error` requests.
-    ```
 
 ## 5. Setting Up and Running the API (Locally or othewise)
 
