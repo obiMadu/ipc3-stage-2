@@ -25,11 +25,16 @@ jobs:
       run: |
             go test ./internals/handlers
 
-    - name: Build
+    - name: Build for Windows
       run: |
-        go build -o api-app ./cmd/api
+        CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -o api-app-${{ github.ref }}.exe ./cmd/api
         mkdir -p release
-        mv api-app release/
+        mv api-app-${{ github.ref }}.exe release/
+
+    - name: Build for Linux
+      run: |
+        CGO_ENABLED=0 go build -o api-app-${{ github.ref }} ./cmd/api
+        mv api-app-${{ github.ref }} release/
 
     - name: Create Release
       id: create_release
@@ -42,12 +47,24 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Upload Release Asset
+    - name: Upload Linux Build Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release/api-app
-        asset_name: api-app
+        asset_path: ./release/api-app-${{ github.ref }}
+        asset_name: api-app-${{ github.ref }}
         asset_content_type: application/octet-stream
+
+    - name: Upload Windows Build Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/api-app-${{ github.ref }}.exe
+        asset_name: api-app-${{ github.ref }}.exe
+        asset_content_type: application/octet-stream
+
+
