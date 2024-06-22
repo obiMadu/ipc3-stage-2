@@ -41,31 +41,31 @@ Sample API base URL: `http://example.com/api`
 
 The API supports the following CRUD operations:
 
-- **CREATE**: `POST /api/users`
-- **READ**: `GET /api` & `GET /api/{userID}` & `GET /api?username={username}`
-- **UPDATE**: `PUT /api/{userID}` & `PUT /api?username={username}`
-- **DELETE**: `DELETE /api{userID}` & `DELETE /api?username={username}`
+- **CREATE**: `POST /users`
+- **READ**: `GET /users` & `GET /users/{userID}` & `GET /users?username={username}`
+- **UPDATE**: `PUT /users/{userID}` & `PUT /users?username={username}`
+- **DELETE**: `DELETE /users/{userID}` & `DELETE /users?username={username}`
 
 ## 3. Request and Response Formats
 
 ### 3.1 Request Formats
 
-- **GET Request:** `GET` `/api` | `GET` `/api/{userID}` | `GET` `/api?username={username}`
+- **GET Request:** `GET` `/users` | `GET` `/users/{userID}` | `GET` `/users?username={username}`
   - Body (no-data)
   
-- **CREATE Request:** `POST` `/api`
+- **CREATE Request:** `POST` `/users`
   - Body (Json):
     - name (string, required, **must-be-unique**): This is the Username of the new User.
     - email (string, required, **must-be-unique**): The Email address of User the new User.
     - fullname (string, optional): Optional Fullname of the User.
     
-- **UPDATE Request:** `PUT` `/api/{userID}` | `PUT` `/api?username={username}`
+- **UPDATE Request:** `PUT` `/users/{userID}` | `PUT` `/users?username={username}`
   - Body (Json): Only any one of the following fields is required
     - name (string, **must-be-unique**): This is the new Username for the User.
     - email (string, **must-be-unique**): The new Email address for the User.
     - fullname (string): The new Fullname for the user.
 
-- **DELETE Request** `DELETE` `/api/{userID}` | `DELETE` `/api?username={username}`
+- **DELETE Request** `DELETE` `/users/{userID}` | `DELETE` `/users?username={username}`
   - Body (no-data)
 
 ### 3.2 Response Formats
