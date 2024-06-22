@@ -77,6 +77,9 @@ The API supports the following CRUD operations:
     - message (string): Summary of the response.
     - data (object): Information returned by the API.
     - error (object): (Mostly always nil) Rare error object retuned at server errors.
+  - Error Codes
+    - The API returns 4xx errors for bad, malformed, incomplete or improper requests.
+    - The API returns 5xx errors for server errors.
 
 ## 4. Sample API Calls
 
