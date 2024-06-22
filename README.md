@@ -17,6 +17,7 @@
   - [5. Setting Up and Running the API (Locally or othewise)](#5-setting-up-and-running-the-api-locally-or-othewise)
     - [5.1 Environment Variables](#51-environment-variables)
     - [5.2 Docker Compose Setup](#52-docker-compose-setup)
+    - [5.3 Run API Locally](#53-run-api-locally)
   - [6. Some Additional Notes](#6-some-additional-notes)
 
 ---
@@ -85,9 +86,11 @@ Visit the Postman Documentation [here](https://documenter.getpostman.com/view/29
 
 ### 5.1 Environment Variables
 
-To run the API via Docker Compose, remember to set the following environment variables on your compose file:
+To run the API locally or via Docker Compose, remember to set the following environment variables. If working locally you can create a `.env` file with a `key:value` format containing the variables below and their values, the program will automatically pick those up at run time. On Docker, set these variables on your Compose file, the `docker-compose.yml` in the project source has good examples.
 
-- `POSTGRES_DSN`: The DSN string for the PosgreSQL database connection.
+- `POSTGRES_DSN`: The DSN string for the PosgreSQL database connection. It's of the format `"host=localhost port=5432 user=postgres password=password dbname=users sslmode=disable"`.
+
+`!important:` When setting environment variables on your Docker Compose file, do NOT enclose the variable values in quotes, EVEN IF said value contains spaces. Docker Compose will add the quotes as part of your string, causing confusion for the program.
 
 ### 5.2 Docker Compose Setup
 
@@ -100,6 +103,9 @@ docker compose up --build
 ```
 
 The API should now be accessible at `http://localhost:8080`
+
+### 5.3 Run API Locally
+If you have a Postgres database setup locally, you can head over to the [Release page](https://github.com/obiMadu/ipc3-stage-2/releases), download the binary for your operating system and run the API.
 
 
 ## 6. Some Additional Notes
