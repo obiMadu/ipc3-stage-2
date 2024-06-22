@@ -16,11 +16,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Extract tag version
-      id: extract_tag
-      run: echo "TAG_VERSION=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
-
-
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
@@ -32,14 +27,14 @@ jobs:
 
     - name: Build for Windows
       run: |
-        CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -o api-app-$(echo $TAG_VERSION).exe ./cmd/api
+        CGO_ENABLED=0 GOOS=windows GOARCH=386 go build -o api-app.exe ./cmd/api
         mkdir -p release
-        mv api-app-$(echo $TAG_VERSION).exe release/
+        mv api-app.exe release/
 
     - name: Build for Linux
       run: |
-        CGO_ENABLED=0 go build -o api-app-$(echo $TAG_VERSION) ./cmd/api
-        mv api-app-$(echo $TAG_VERSION) release/
+        CGO_ENABLED=0 go build -o api-app ./cmd/api
+        mv api-app release/
 
     - name: Create Release
       id: create_release
@@ -58,8 +53,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release/api-app-$(echo $TAG_VERSION)
-        asset_name: api-app-*
+        asset_path: ./release/api-app
+        asset_name: api-app
         asset_content_type: application/octet-stream
 
     - name: Upload Windows Build Asset
@@ -68,8 +63,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release/api-app-$(echo $TAG_VERSION).exe
-        asset_name: api-app-*.exe
+        asset_path: ./release/api-app.exe
+        asset_name: api-app.exe
         asset_content_type: application/octet-stream
 
 
