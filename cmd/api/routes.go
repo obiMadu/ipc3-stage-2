@@ -20,7 +20,10 @@ func router() *gin.Engine {
 
 	// API/USERS group
 	users := api.Group("/users")
-	users.POST("/", handlers.CreateUser)
+
+	users.POST("/", func(c *gin.Context) {
+		handlers.CreateUser(c, db.DB)
+	})
 
 	users.GET("/", func(c *gin.Context) {
 		handlers.GetAll(c, db.DB)
@@ -32,8 +35,12 @@ func router() *gin.Engine {
 	users.PUT("/", handlers.UpdateUser)
 	users.PUT("/:userID", handlers.UpdateUser)
 
-	users.DELETE("/", handlers.DeleteUser)
-	users.DELETE("/:userID", handlers.DeleteUser)
+	users.DELETE("/", func(c *gin.Context) {
+		handlers.DeleteUserByUsername(c, db.DB)
+	})
+	users.DELETE("/:userID", func(c *gin.Context) {
+		handlers.DeleteUserByID(c, db.DB)
+	})
 
 	return mux
 }
