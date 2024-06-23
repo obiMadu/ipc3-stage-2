@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -51,8 +52,6 @@ func InitDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 }
 
 func TestCreateUser(t *testing.T) {
-	db, mock := InitDB(t)
-
 	tests := []test{
 		{
 			name: "Create user accurately",
@@ -103,45 +102,54 @@ func TestCreateUser(t *testing.T) {
 				},
 			},
 		},
-		// {
-		// 	name: "Create user with duplicate username",
-		// 	args: args{
-		// 		sqlStatement:      ".*",
-		// 		sqlStatus:         "error",
-		// 		sqlErrorText:      "duplicate key value violates unique constraint",
-		// 		httpRequestURL:    "/",
-		// 		httpRequestMethod: "POST",
-		// 		httpRequestBody: gin.H{
-		// 			"username": "user2",
-		// 			"email":    "user2@example.com",
-		// 		},
-		// 		httpResponseBodyCode: http.StatusBadRequest,
-		// 		httpResponseBody: jsonResponse{
-		// 			Status:  "error",
-		// 			Message: "Username has been taken!",
-		// 		},
-		// 	},
-		// },
+		{
+			name: "Create user with duplicate username_EXPOSE SQLMOCK BUG",
+			args: args{
+				sqlStatement:      ".*",
+				sqlStatus:         "error",
+				sqlErrorText:      "duplicate key value violates unique constraint username",
+				httpRequestURL:    "/",
+				httpRequestMethod: "POST",
+				httpRequestBody: gin.H{
+					"username": "user1",
+					"email":    "user2@example.com",
+				},
+				httpResponseBodyCode: http.StatusBadRequest,
+				httpResponseBody: jsonResponse{
+					Status:  "error",
+					Message: "Username has been taken!",
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			// !important: get raw db and defer close, to avoid intra-test db leaks
+			// Trust me those suck.
+			db, mock := InitDB(t)
+			rawDB, err := db.DB()
+			if err != nil {
+				t.Fatalf("Unable to get sql.DB from gorm.DB, %v", err)
+			}
+			defer rawDB.Close()
 
-			mock.ExpectBegin()
-			mock.ExpectQuery(".*").WillReturnRows(sqlmock.NewRows(nil))
-
-			// switch test.args.sqlStatus {
-			// case "error":
-			// 	mock.ExpectQuery(".*").WillReturnError(errors.New((test.args.sqlErrorText)))
-			// default:
-			// 	mock.ExpectQuery(".*").WillReturnRows(sqlmock.NewRows(nil))
-			// }
-
-			mock.ExpectCommit()
+			switch test.args.sqlStatus {
+			case "error":
+				mock.ExpectBegin()
+				mock.ExpectQuery(".*").WillReturnError(fmt.Errorf(test.args.sqlErrorText))
+				mock.ExpectRollback()
+			default:
+				mock.ExpectBegin()
+				mock.ExpectQuery(".*").WillReturnRows(sqlmock.NewRows(nil))
+				mock.ExpectCommit()
+			}
 
 			gin.SetMode(gin.ReleaseMode)
 			r := gin.New()
 			r.Use(gin.Logger())
+
+			// Setup listen route & handler
 			r.POST("/", func(c *gin.Context) {
 				CreateUser(c, db)
 			})
@@ -161,6 +169,7 @@ func TestCreateUser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create request %v", err)
 			}
+			defer req.Body.Close()
 
 			if requestBody != nil {
 				req.Header.Set("Content-Type", "application/json")
@@ -182,8 +191,6 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestGetAll(t *testing.T) {
-	db, mock := InitDB(t)
-
 	tests := []test{
 		{
 			name: "Get all 2 rows",
@@ -231,6 +238,13 @@ func TestGetAll(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			db, mock := InitDB(t)
+			rawDB, err := db.DB()
+			if err != nil {
+				t.Fatalf("Unable to get sql.DB from gorm.DB, %v", err)
+			}
+			defer rawDB.Close()
+
 			rows := sqlmock.NewRows([]string{"id", "username", "email"})
 			for _, row := range test.args.sqlReturnRows {
 				rows.AddRow(row[0], row[1], row[2])
@@ -272,8 +286,6 @@ func TestGetAll(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	db, mock := InitDB(t)
-
 	tests := []test{
 		{
 			name: "Get user by ID",
@@ -315,6 +327,13 @@ func TestGetUserByID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			db, mock := InitDB(t)
+			rawDB, err := db.DB()
+			if err != nil {
+				t.Fatalf("Unable to get sql.DB from gorm.DB, %v", err)
+			}
+			defer rawDB.Close()
+
 			rows := sqlmock.NewRows([]string{"id", "username", "email"})
 			for _, row := range test.args.sqlReturnRows {
 				rows.AddRow(row[0], row[1], row[2])
@@ -356,8 +375,6 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestDeleteUserByID(t *testing.T) {
-	db, mock := InitDB(t)
-
 	tests := []test{
 		{
 			name: "Delete user by ID",
@@ -409,6 +426,12 @@ func TestDeleteUserByID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			db, mock := InitDB(t)
+			rawDB, err := db.DB()
+			if err != nil {
+				t.Fatalf("Unable to get sql.DB from gorm.DB, %v", err)
+			}
+			defer rawDB.Close()
 
 			rows := sqlmock.NewRows([]string{"id", "username", "email"})
 			for _, row := range test.args.sqlReturnRows {
@@ -454,8 +477,6 @@ func TestDeleteUserByID(t *testing.T) {
 }
 
 func TestDeleteUserByUsername(t *testing.T) {
-	db, mock := InitDB(t)
-
 	tests := []test{
 		{
 			name: "Delete user by Username",
@@ -505,6 +526,12 @@ func TestDeleteUserByUsername(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			db, mock := InitDB(t)
+			rawDB, err := db.DB()
+			if err != nil {
+				t.Fatalf("Unable to get sql.DB from gorm.DB, %v", err)
+			}
+			defer rawDB.Close()
 
 			rows := sqlmock.NewRows([]string{"id", "username", "email"})
 			for _, row := range test.args.sqlReturnRows {
