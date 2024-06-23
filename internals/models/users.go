@@ -49,7 +49,11 @@ func UpdateUserByUsername(db *gorm.DB, username string, user Users) error {
 }
 
 func DeleteUserByID(db *gorm.DB, id uint) error {
-	return db.Delete(&Users{}, id).Error
+	user, err := GetUserByID(db, id)
+	if err != nil {
+		return err
+	}
+	return db.Delete(&Users{}, user).Error
 }
 
 func DeleteUserByUsername(db *gorm.DB, username string) error {
